@@ -1,10 +1,12 @@
 from flask import Flask, request, jsonify
 import requests
 import random
+from time import sleep
 
 app = Flask(__name__)
 
-DRONE_START_URL = "http://communication:8000/start_boat"
+DRONE_START_URL = "http://communication:8000/start_mission"
+APPROVAL_PHOTO_URL = "http://communication:8000/confirm_photo"
 work_flag = False
 start_point = []
 ready_flag = False
@@ -49,21 +51,37 @@ class Center:
         spray.append(spray[0][0] + dispersion , spray[0][1])
         mission("forward_route") = route
         mission("spray") = spray
-        #!!!!!!!!!!!!!!!!!!!!!!!! 
         mission("backward_route") = route[::-1]
         return mission
         
 center = Center()
 
-@app.route('/log-drone-data', methods=['POST'])
+@app.route('/init_status', methods=['POST'])
 def log_boat_data():
     global start_point
     global ready_flag
     data = request.get_json()
-    drone_pos = data.get("current_coords")
-    start_point = drone_pos
-    ready_flag = True
-    return jsonify({"status": "Drone data successfully logged"}), 200
+    if ready_flag:
+         print(f'Drone data - {data.get("status")}')
+         return jsonify({"status": "logged"}), 200
+    else:
+        status = data.get("status")
+        start_point = status.get("coords")
+        ready_flag = True
+        return jsonify({"status": "Drone data successfully logged"}), 200
+
+@app.route('/validate' , methods=['POST'])
+def validate():
+    data = request.get_json()
+    photo = data.get("photo")
+    print(f"validating {photo} ... ")
+    sleep(3)
+    print("success!")
+    try:
+        responce = requests.get(APPROVAL_PHOTO_URL)
+    except Exception as e:
+                return {"status": "error", "message": str(e)}
+
 
 
 @app.route('/start', methods=['GET'])

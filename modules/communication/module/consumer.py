@@ -13,38 +13,27 @@ from .producer import proceed_to_deliver
 
 app = Flask(__name__)
 
-CKOB_BOAT_DATA_LOG_URL = "http://ckob:8000/log-boat-data"
-ORVD_BOAT_POS_LOG_URL = "http://orvd:8000/log-boat-pos"
-CKOB_FINISH = "http://ckob:8000/finish"
+APP_STATUS_URL = "http://mobile:8000/init_status"
+CENTER_STATUS_URL = "http://center:8000/init_status"
+CENTER_VALIDATE_PHOTO = "http://center:8000/validate"
 MODULE_NAME: str = os.getenv("MODULE_NAME")
 INIT_PATH: str = "/shared/init"
 
 
 
-
-def send_emergency(code):
+def send_status(details):
     try:
-        payload = {"status": "stopped by emergency" , "code": code}
-        responce_orvd = requests.post(ORVD_BOAT_POS_LOG_URL, json=payload)
-        json_data_orvd = responce_orvd.json()
+        responce_app = requests.post(APP_STATUS_URL, json=details)
         
-        responce_ckob = requests.post(CKOB_BOAT_DATA_LOG_URL, json=payload)
-        json_data_ckob = responce_ckob.json()
+        responce_center = requests.post(CENTER_STATUS_URL, json=details)
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
-def send_telemetry(telemtry):
+def send_photo(details):
     try:
-        payload = telemtry
-        print(payload)
-        responce_orvd = requests.post(ORVD_BOAT_POS_LOG_URL, json=payload)
-        json_data_orvd = responce_orvd.json()
-        
-        responce_ckob = requests.post(CKOB_BOAT_DATA_LOG_URL, json=payload)
-        json_data_ckob = responce_ckob.json()
+        responce_center = requests.post(CENTER_VALIDATE_PHOTO , json=details)
     except Exception as e:
         return {"status": "error", "message": str(e)}
-
 
 def handle_event(id, details_str):
     """ Модуль сбора данных. """
@@ -52,26 +41,14 @@ def handle_event(id, details_str):
     source: str = details.get("source")
     deliver_to: str = details.get("deliver_to")
     operation: str = details.get("operation")
-    
-
     print(f"[info] handling event {id}, "
           f"{source}->{deliver_to}: {operation}")
 
-    if operation == "route_complete":
-        try:
-            responce = requests.get(CKOB_FINISH)
-        except Exception as e:
-            return {"status": "error", "message": str(e)}
+    if operation == "photo":
+        send_photo()
 
-    if operation == "send_telemetry":
-        telemetry = details.get("telemetry")
-        send_telemetry(telemetry)
-        print("[message_processing] send telemetry telemetry")
-
-    if operation == "emergency_stop" and source == "crypto":
-        code = details.get("code")
-        print("[message processing] boat stopped by emergency")
-        send_emergency(code)
+    if operation == "status":
+        send_status(details)
 
 def consumer_job(args, config):
     consumer = Consumer(config)

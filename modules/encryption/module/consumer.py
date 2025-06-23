@@ -11,31 +11,54 @@ from .producer import proceed_to_deliver
 
 
 MODULE_NAME = os.getenv("MODULE_NAME")
-
-def turn_on(route):
+consumers = ["limiter", "mission-control", "task-orchestrator"]
+def turn_on():
     proceed_to_deliver(uuid4().__str__(), {
-            "deliver_to": "drone-state-control",
+            "deliver_to": "drone-status-control",
             "operation": "turn_on",
         })
 
+def start_mission(details):
+    global consumers
+    mission = details.get("mission")
+    for consumer in consumers:
+        proceed_to_deliver(uuid4().__str__(), {
+                "deliver_to": consumer,
+                "operation": "set_mission",
+                "mission": mission
+            })
 
+def sign_and_send(details):
+    print("signing message")
+    proceed_to_deliver(uuid4().__str__(),details)
+
+def verify():
+    return True
 
 def handle_event(id, details_str):
     """ Обработчик входящих в модуль задач. """
+
     details = json.loads(details_str)
-
     source: str = details.get("source")
-    deliver_to: str = details.get("deliver_to")
-    #data: str = details.get("data")
-    operation: str = details.get("operation")
-    print("decrypting message...")
-    if operation == "turn_on":
-        turn_on()
-
-
+    if source == "communication":
+        if verify():
+            deliver_to: str = details.get("deliver_to")
+            operation: str = details.get("operation")
+            if operation == "turn_on":
+                turn_on()
+            if operation == "start_mission":
+                start_mission(details)
+            if operation == "confirm_photo":
+                details["deliver_to"] = "mission-control"
+                proceed_to_deliver(uuid4().__str__(),details)
+                
+    elif source == "message-sending": # status , photo
+        deliver_to: str = details.get("deliver_to")
+        operation: str = details.get("operation")
+        details["deliver_to"] = "communication"
+        sign_and_send(details)
     print(f"[info] handling event {id}, "
           f"{source}->{deliver_to}: {operation}")
-    
 
 def consumer_job(args, config):
     consumer = Consumer(config)

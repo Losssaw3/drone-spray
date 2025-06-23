@@ -1,0 +1,7 @@
+confluent-kafka
+configparser
+flask
+requests
+pytest
+pytest-rerunfailures
+yapf

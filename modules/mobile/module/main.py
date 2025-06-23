@@ -5,6 +5,7 @@ import random
 app = Flask(__name__)
 
 DRONE_TURN_ON_URL = "http://communication:8000/turn_on"
+DRONE_START_URL = "http://communication:8000/start"
 ready_flag = False
 
 @app.route('/turn_on')
@@ -17,6 +18,8 @@ def turn_on():
 def init_status():
     global ready_flag
     data = request.get_json()
+    print (f'{data.get("status")}')
+    ready_flag = True
 
 @app.route('/start', methods=['GET'])
 def start():
