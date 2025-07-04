@@ -37,21 +37,20 @@ class Center:
 
     def generate_random_mission(self, num_points=4, x_range=(100, 200), y_range=(100, 200),dispersion = 10):
         global start_point
-        route = []
-        spray = []
-        route[0] = start_point
+        route = [start_point]
         mission = {}
         for _ in range(num_points):
             x = random.randint(x_range[0], x_range[1])
             y = random.randint(y_range[0], y_range[1])
             route.append([x, y])
-        spray[0] = route[-1]
-        spray.append(spray[0][0] , spray[0][1] + dispersion)
-        spray.append(spray[0][0] + dispersion , spray[0][1] + dispersion)  
-        spray.append(spray[0][0] + dispersion , spray[0][1])
-        mission("forward_route") = route
-        mission("spray") = spray
-        mission("backward_route") = route[::-1]
+        last_point = route[-1]
+        spray = [last_point]
+        spray.append([last_point[0] , last_point[1] + dispersion])
+        spray.append([last_point[0] + dispersion , last_point[1] + dispersion])  
+        spray.append([last_point[0] + dispersion , last_point[1]])
+        mission["forward_route"] = route
+        mission["spray"] = spray
+        mission["backward_route"] = route[::-1]
         return mission
         
 center = Center()
@@ -62,11 +61,11 @@ def log_boat_data():
     global ready_flag
     data = request.get_json()
     if ready_flag:
-         print(f'Drone data - {data.get("status")}')
+         print(f'Drone data - {data.get("status")} starting point {start_point}')
          return jsonify({"status": "logged"}), 200
     else:
         status = data.get("status")
-        start_point = status.get("coords")
+        start_point = status["coords"]
         ready_flag = True
         return jsonify({"status": "Drone data successfully logged"}), 200
 
@@ -87,7 +86,7 @@ def validate():
 @app.route('/start', methods=['GET'])
 def start():    
     center.send_mission_to_drone()
-    return 200
+    return jsonify({"status": "Mission started"}), 200
 
 def start_web():
     app.run(host='0.0.0.0', port=8000, threaded=True)

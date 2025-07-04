@@ -15,9 +15,12 @@ work_flag = False
 permission = False
 MODULE_NAME = os.getenv("MODULE_NAME")
 
-def check(point):
-    global work_flag
-    if spray_point == point and not work_flag:
+def float_equal_alt(x1: float, y1: float, x2: float, y2: float, epsilon: float = 1) -> bool:
+    return (abs(x1 - x2) <= epsilon and abs(y1 - y2) <= epsilon)
+
+def check():
+    global work_flag , current_point , spray_point
+    if float_equal_alt(current_point[0] , current_point[1] , spray_point[0], spray_point[1]) and not work_flag:
         work_flag = True
         proceed_to_deliver(uuid4().__str__(), {
             "deliver_to": "limiter",
@@ -28,12 +31,14 @@ def check(point):
             "deliver_to": "camera",
             "operation": "take_photo",
         })
-    elif spray_point == point and permission:
+
+    elif float_equal_alt(current_point[0] , current_point[1] , spray_point[0], spray_point[1]) and permission:
             proceed_to_deliver(uuid4().__str__(), {
                 "deliver_to": "sprayer-control",
                 "operation": "turn_on",
             })
-    elif spray_point == point and work_flag:
+            
+    elif float_equal_alt(current_point[0] , current_point[1] , spray_point[0], spray_point[1]) and work_flag:
         work_flag = False
         proceed_to_deliver(uuid4().__str__(), {
             "deliver_to": "sprayer-control",

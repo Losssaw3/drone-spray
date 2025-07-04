@@ -13,7 +13,7 @@ from .producer import proceed_to_deliver
 
 MODULE_NAME = os.getenv("MODULE_NAME")
 
-standard_speed = 1.0
+standard_speed = 3.0
 forward_route = []
 spray_route = []
 backward_route = []
@@ -45,7 +45,8 @@ def calculate_route(route):
             "start": [x1, y1],
             "end":[x2, y2],
             "azimuth": azimuth,
-            "time": time_to_travel
+            "time": time_to_travel,
+            "speed": standard_speed
         })
     
     return calculated_route
@@ -68,11 +69,11 @@ def start_calculation():
           f"spray route: {spray_route}, "
           f"backward route: {backward_route}")
 
-def set_mission(mission):
+def set_mission(details):
     global forward_route,spray_route,backward_route
-    forward_route = mission.get("forward_route")
-    spray_route = mission.get("spray")
-    backward_route = mission.get("backward_route")
+    forward_route = details.get("mission").get("forward_route")
+    spray_route = details.get("mission").get("spray")
+    backward_route = details.get("mission").get("backward_route")
     start_calculation()
 
 
@@ -84,8 +85,7 @@ def handle_event(id, details_str):
     deliver_to: str = details.get("deliver_to")
     operation: str = details.get("operation")
     if operation == "set_mission":
-        mission = details.get("mission")
-        set_mission(mission)
+        set_mission(details)
 
 
     print(f"[info] handling event {id}, "

@@ -12,6 +12,7 @@ from confluent_kafka import Producer
 _requests_queue: multiprocessing.Queue = None
 INIT_PATH: str = "/shared/flight_status"
 MODULE_NAME: str = os.getenv("MODULE_NAME")
+COORDS: str = "/shared/coords"
 standart_height = 10.0
 
 def read_init() -> bool:
@@ -22,8 +23,15 @@ def read_init() -> bool:
 
 def imitate_height():
     while True:
-        height = standart_height + randint(-1.5 , 1.5)
+        height = standart_height + randint(-2 , 2)
         if read_init():
+            with open(COORDS, 'r') as file:
+                data = file.read().strip()
+            values = [x.strip() for x in data.split(',')]
+            values[2] = str(height)
+            new_data = ', '.join(values)
+        with open(COORDS, 'w') as file:
+            file.write(new_data)
             proceed_to_deliver(uuid4().__str__(), {
                 "deliver_to": "limiter",
                 "operation": "current_height",
@@ -34,6 +42,7 @@ def imitate_height():
                 "operation": "current_height",
                 "height": height
             })
+        
         sleep(randint(7, 10))
 
 

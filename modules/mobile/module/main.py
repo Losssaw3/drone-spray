@@ -14,12 +14,13 @@ def turn_on():
     response = requests.get(DRONE_TURN_ON_URL, json=payload)
     return jsonify({"status": "drone initializing..."}) , 200
 
-@app.route('/init_status')
+@app.route('/init_status', methods=['POST'])
 def init_status():
     global ready_flag
     data = request.get_json()
     print (f'{data.get("status")}')
     ready_flag = True
+    return jsonify({"status": "ok"}), 200
 
 @app.route('/start', methods=['GET'])
 def start():

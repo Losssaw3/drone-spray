@@ -14,7 +14,7 @@ MODULE_NAME = os.getenv("MODULE_NAME")
 INIT_PATH: str = "/shared/init"
 COORDS_PATH: str = "/shared/coords"
 current_height = 0
-current_coordinates = []
+current_coordinates = [0.0 , 0.0]
 battery_level = 0
 
 def initialize():
@@ -22,8 +22,7 @@ def initialize():
     with open(INIT_PATH, 'w') as file:
             file.write('1')
     print("Drone turned on , checking module health...")
-    for i in range(current_coordinates):
-        current_coordinates[i].append(randint(0,100))
+    current_coordinates = [float(randint(0, 100)), float(randint(0, 100))]
     with open(COORDS_PATH, 'w') as file:
         file.write(f"{current_coordinates[0]} , {current_coordinates[1]} , {current_height}")
     battery_level = 100
@@ -109,4 +108,4 @@ def consumer_job(args, config):
 def start_consumer(args, config):
     print(f"{MODULE_NAME}_consumer started")
     threading.Thread(target=lambda: consumer_job(args, config)).start()
-    threading.TIMEOUT_MAX(target=send_status).start()
+    threading.Thread(target=send_status).start()

@@ -29,7 +29,7 @@ def turn_on():
         })
     return jsonify({"status": "ok"}) , 200
 
-@app.route('/start_mission')
+@app.route('/start_mission', methods = ['POST'])
 def start_mission():
     mission = request.get_json()
     proceed_to_deliver(uuid4().__str__(), {
@@ -39,7 +39,7 @@ def start_mission():
         })
     return jsonify({"status": "ok"}) , 200
 
-@app.route('/confirm_photo')
+@app.route('/confirm_photo' , methods = ['POST'])
 def confirm_photo():
     proceed_to_deliver(uuid4().__str__(), {
             "deliver_to": "encryption",

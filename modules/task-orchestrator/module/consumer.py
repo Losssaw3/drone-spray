@@ -24,7 +24,7 @@ def set_mission(mission):
     proceed_to_deliver(uuid4().__str__(), {
             "deliver_to": "movement-calculation",
             "operation": "set_mission",
-            "status": mission
+            "mission": mission
         })
 
 def handle_event(id, details_str):

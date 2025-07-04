@@ -10,7 +10,6 @@ from .producer import start_producer
 
 MODULE_NAME = os.getenv('MODULE_NAME')
 
-
 def main():
     print(f'[DEBUG] {MODULE_NAME} started...')
 
