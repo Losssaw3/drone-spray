@@ -9,18 +9,20 @@ from time import sleep
 from confluent_kafka import Consumer, OFFSET_BEGINNING
 from .producer import proceed_to_deliver
 
+end_point = []
 spray_point = []
 current_point = []
+spray_status = False
 work_flag = False
 permission = False
 MODULE_NAME = os.getenv("MODULE_NAME")
 
-def float_equal_alt(x1: float, y1: float, x2: float, y2: float, epsilon: float = 1) -> bool:
+def float_equal_alt(x1: float, y1: float, x2: float, y2: float, epsilon: float = 5) -> bool:
     return (abs(x1 - x2) <= epsilon and abs(y1 - y2) <= epsilon)
 
 def check():
-    global work_flag , current_point , spray_point
-    if float_equal_alt(current_point[0] , current_point[1] , spray_point[0], spray_point[1]) and not work_flag:
+    global work_flag , current_point , spray_point , spray_status
+    if float_equal_alt(current_point[0] , current_point[1] , spray_point[0], spray_point[1]) and not work_flag:  
         work_flag = True
         proceed_to_deliver(uuid4().__str__(), {
             "deliver_to": "limiter",
@@ -32,25 +34,31 @@ def check():
             "operation": "take_photo",
         })
 
-    elif float_equal_alt(current_point[0] , current_point[1] , spray_point[0], spray_point[1]) and permission:
-            proceed_to_deliver(uuid4().__str__(), {
-                "deliver_to": "sprayer-control",
-                "operation": "turn_on",
-            })
-            
-    elif float_equal_alt(current_point[0] , current_point[1] , spray_point[0], spray_point[1]) and work_flag:
+    if float_equal_alt(current_point[0] , current_point[1] , end_point[0], end_point[1]) and spray_status:
         work_flag = False
+        spray_status = False
         proceed_to_deliver(uuid4().__str__(), {
             "deliver_to": "sprayer-control",
             "operation": "turn_off",
         })
-    else:
-        pass
+
+def start_spraying():
+    global work_flag , current_point , spray_point , spray_status
+    spray_status = True
+    proceed_to_deliver(uuid4().__str__(), {
+                "deliver_to": "sprayer-control",
+                "operation": "turn_on",
+        })
+    proceed_to_deliver(uuid4().__str__(), {
+                "deliver_to": "limiter",
+                "operation": "resume",
+        })
+            
+    
+
 
 def handle_event(id, details_str):
-    global spray_point
-    global permission
-    global current_point
+    global spray_point, permission , current_point , end_point
     """ Обработчик входящих в модуль задач. """
     details = json.loads(details_str)
     source: str = details.get("source")
@@ -59,11 +67,13 @@ def handle_event(id, details_str):
     if operation == "set_mission":
         mission = details.get("mission")
         spray_point = mission.get("spray")[0]
+        end_point = mission.get("spray")[-1]
 
-    if operation == "current_coords" and spray_point:
-        point = details.get("current_coords")
+    if operation == "current_coords" and spray_point and end_point:
+        point = details.get("coords")
         current_point = point
-        check(point)
+        print(point)
+        check()
     if operation == "photo":
         photo = details.get("photo")
         proceed_to_deliver(uuid4().__str__(), {
@@ -73,11 +83,9 @@ def handle_event(id, details_str):
             })
     if operation == "confirm_photo":
         permission = True
-        check(current_point)
-        proceed_to_deliver(uuid4().__str__(), {
-                "deliver_to": "limiter",
-                "operation": "resume",
-            })
+        print("Даю команду на возобновление движения")
+        start_spraying()
+        
 
     print(f"[info] handling event {id}, "
           f"{source}->{deliver_to}: {operation}")

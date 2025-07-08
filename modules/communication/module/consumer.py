@@ -45,7 +45,7 @@ def handle_event(id, details_str):
           f"{source}->{deliver_to}: {operation}")
 
     if operation == "photo":
-        send_photo()
+        send_photo(details)
 
     if operation == "status":
         send_status(details)

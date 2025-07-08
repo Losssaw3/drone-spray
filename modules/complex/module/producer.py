@@ -8,7 +8,7 @@ from confluent_kafka import Producer
 
 _requests_queue: multiprocessing.Queue = None
 MODULE_NAME = os.getenv('MODULE_NAME')
-INIT_PATH: str = "/shared/init"
+
 
 def proceed_to_deliver(id, details):
     details['source'] = MODULE_NAME

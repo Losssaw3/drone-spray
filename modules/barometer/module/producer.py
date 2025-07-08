@@ -30,8 +30,8 @@ def imitate_height():
             values = [x.strip() for x in data.split(',')]
             values[2] = str(height)
             new_data = ', '.join(values)
-        with open(COORDS, 'w') as file:
-            file.write(new_data)
+            with open(COORDS, 'w') as file:
+                file.write(new_data)
             proceed_to_deliver(uuid4().__str__(), {
                 "deliver_to": "limiter",
                 "operation": "current_height",

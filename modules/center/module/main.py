@@ -35,14 +35,15 @@ class Center:
             print("error! drone already on mission or not ready")
         
 
-    def generate_random_mission(self, num_points=4, x_range=(100, 200), y_range=(100, 200),dispersion = 10):
+    def generate_random_mission(self, num_points=4, x_range=(100, 200), y_range=(100, 200), dispersion = 15):
         global start_point
         route = [start_point]
         mission = {}
-        for _ in range(num_points):
+        for _ in range(num_points - 1):
             x = random.randint(x_range[0], x_range[1])
             y = random.randint(y_range[0], y_range[1])
             route.append([x, y])
+        route.append([random.randint(205 , 220) , random.randint(205 , 220)])
         last_point = route[-1]
         spray = [last_point]
         spray.append([last_point[0] , last_point[1] + dispersion])
@@ -75,9 +76,9 @@ def validate():
     photo = data.get("photo")
     print(f"validating {photo} ... ")
     sleep(3)
-    print("success!")
     try:
         responce = requests.get(APPROVAL_PHOTO_URL)
+        return jsonify({"status": "success!"}), 200
     except Exception as e:
                 return {"status": "error", "message": str(e)}
 

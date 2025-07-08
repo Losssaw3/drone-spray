@@ -45,7 +45,7 @@ def complex():
                         "operation": "current_coords",
                         "coords": coords
                     })
-        sleep(0.5)
+        sleep(2)
 
 def handle_event(id, details_str):
     global work_flag

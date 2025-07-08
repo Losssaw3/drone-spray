@@ -1,0 +1,6 @@
+####Включение дрона
+GET http://localhost:8003/turn_on HTTP/1.1
+
+###Начало ввыполнения миссии
+
+GET http://localhost:8003/start HTTP/1.1

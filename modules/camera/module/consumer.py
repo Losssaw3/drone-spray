@@ -12,13 +12,13 @@ from .producer import proceed_to_deliver
 MODULE_NAME = os.getenv("MODULE_NAME")
 
 def photo():
-    photo = ("image " + uuid4.__str__)
-    print("Taking photto of area...")
-    proceed_to_deliver(uuid4().__str__(), {
-            "deliver_to": "mission-control",
-            "operation": "photo",
-            "photo": photo
-        })
+    photo_id = "image_" + str(uuid4())
+    print("Taking photo of area...")
+    proceed_to_deliver(str(uuid4()), {
+        "deliver_to": "mission-control",
+        "operation": "photo",
+        "photo": photo_id
+    })
 
 def handle_event(id, details_str):
     global work_flag

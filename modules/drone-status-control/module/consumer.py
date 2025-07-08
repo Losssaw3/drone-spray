@@ -13,6 +13,7 @@ from .producer import proceed_to_deliver
 MODULE_NAME = os.getenv("MODULE_NAME")
 INIT_PATH: str = "/shared/init"
 COORDS_PATH: str = "/shared/coords"
+FLIGHT_STATUS_PATH: str = "/shared/flight_status"
 current_height = 0
 current_coordinates = [0.0 , 0.0]
 battery_level = 0
@@ -22,7 +23,7 @@ def initialize():
     with open(INIT_PATH, 'w') as file:
             file.write('1')
     print("Drone turned on , checking module health...")
-    current_coordinates = [float(randint(0, 100)), float(randint(0, 100))]
+    current_coordinates = [80.0, 80.0]
     with open(COORDS_PATH, 'w') as file:
         file.write(f"{current_coordinates[0]} , {current_coordinates[1]} , {current_height}")
     battery_level = 100
@@ -38,6 +39,15 @@ def send_status():
     while True:
         status = {"coords": current_coordinates,"height": current_height,"battery": battery_level}
         try:
+            with open(FLIGHT_STATUS_PATH, 'r') as file:
+                flight_status = file.read().strip()
+            if flight_status == "2":
+                proceed_to_deliver(uuid4().__str__(), {
+                "deliver_to": "message-sending",
+                "operation": "flight-report",
+                "status": status
+            })
+
             with open(INIT_PATH, 'r') as file:
                 content = file.read().strip()
             if content == '1' and current_coordinates:
@@ -46,13 +56,18 @@ def send_status():
                 "operation": "status",
                 "status": status
             })
+                proceed_to_deliver(uuid4().__str__(), {
+                "deliver_to": "mission-control",
+                "operation": "current_coords",
+                "coords": current_coordinates
+            })
             elif content == '0':
-                pass
+                sleep(1)
         except FileNotFoundError:
             print(f"Файл не найден: {INIT_PATH}")
         except Exception as e:
             print(f"Произошла ошибка при чтении файла: {e}")
-        sleep(10)
+        sleep(2)
 
 def handle_event(id, details_str):
     global current_coordinates, battery_level, current_height

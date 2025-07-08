@@ -35,7 +35,7 @@ def read_coords():
                 "operation": "current_coords_ins",
                 "coords": current_coords
             })        
-        sleep(0.4)
+        sleep(2)
 
 
 def proceed_to_deliver(id, details):

@@ -39,7 +39,7 @@ def start_mission():
         })
     return jsonify({"status": "ok"}) , 200
 
-@app.route('/confirm_photo' , methods = ['POST'])
+@app.route('/confirm_photo' , methods = ['GET'])
 def confirm_photo():
     proceed_to_deliver(uuid4().__str__(), {
             "deliver_to": "encryption",
