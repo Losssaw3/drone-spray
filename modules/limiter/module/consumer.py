@@ -70,7 +70,7 @@ def calculate_azimuth(x1, y1, x2, y2):
     azimuth = (angle_deg + 360) % 360
     return azimuth
 
-def control_servos():
+def start_forward():
     global forward_route, spray_route, backward_route, current_index, forward_flag
     while True:
         with open(FLIGHT_STATUS_PATH, 'r') as file:
@@ -251,6 +251,6 @@ def consumer_job(args, config):
 def start_consumer(args, config):
     print(f"{MODULE_NAME}_consumer started")
     threading.Thread(target=lambda: consumer_job(args, config)).start()
-    threading.Thread(target=control_servos).start()
+    threading.Thread(target=start_forward).start()
     threading.Thread(target=start_spraying).start()
     threading.Thread(target=start_backward).start()
