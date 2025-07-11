@@ -14,6 +14,7 @@ current_coords_ins = [0.0 , 0.0]
 coords = [0.0 , 0.0]
 MODULE_NAME = os.getenv("MODULE_NAME")
 INIT_PATH: str = "/shared/init"
+FLIGHT_STATUS_PATH: str = "/shared/flight_status"
 
 def set_ins_coords(details):
     global current_coords_ins
@@ -28,6 +29,12 @@ def read_init() -> bool:
         status = file.read()
 
     return status == "1"
+
+def read_finish() -> bool:
+    with open(FLIGHT_STATUS_PATH, "r") as file:
+        status = file.read()
+
+    return status == "2"
 
 def complex():
     global coords , current_coords_gps , current_coords_ins
@@ -45,6 +52,8 @@ def complex():
                         "operation": "current_coords",
                         "coords": coords
                     })
+        if read_finish():
+            break
         sleep(2)
 
 def handle_event(id, details_str):

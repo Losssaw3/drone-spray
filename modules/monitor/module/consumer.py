@@ -18,13 +18,16 @@ def handle_event(id, details_str):
           f"{details['source']}->{details['deliver_to']}: " \
           f"{details['operation']}")
 
-    #f check_operation(id, details): !!!!!!!!!!!!!!!
-    return proceed_to_deliver(id, details)
+    if check_operation(id, details):
+        return proceed_to_deliver(id, details)
 
     print(f"[error] !!!! policies check failed, delivery unauthorized !!! " \
           f"id: {id}, {details['source']}->{details['deliver_to']}: " \
           f"{details['operation']}")
     print(f"[error] suspicious event details: {details}")
+    
+
+    
 
 
 def consumer_job(args, config):

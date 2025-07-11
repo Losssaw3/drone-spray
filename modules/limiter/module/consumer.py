@@ -143,7 +143,6 @@ def start_spraying():
         if spray_route and spray_flag and not forward_flag and float_equal_alt(current_coords[0] , current_coords[1] , spray_route[-1].get("end")[0], spray_route[-1].get("end")[1]):
             spray_flag = False
             current_index = 0
-            backward_flag = True
             print("Окончание маршрута распрыскивания")
             azimuth = calculate_azimuth(current_coords[0] , current_coords[1] , backward_route[current_index].get("end")[0], backward_route[current_index].get("end")[1])
             target = backward_route[current_index].get("end")
@@ -155,6 +154,8 @@ def start_spraying():
                 "speed": speed,
                 "end": target
             })
+            sleep(3)
+            backward_flag = True
             break
         
         if spray_route and spray_flag and not forward_flag and float_equal_alt(current_coords[0] , current_coords[1] , spray_route[current_index].get("end")[0], spray_route[current_index].get("end")[1])and (current_index < len(spray_route)):

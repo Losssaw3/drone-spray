@@ -31,8 +31,13 @@ def handle_event(id, details_str):
     operation: str = details.get("operation")
     
     if operation == "status":
-        status = str = details.get("status")
+        status: str = details.get("status")
         send_status(status)
+
+    if operation == "flight-report":
+        status = details.get("report")
+        send_status(status)
+
 
     if operation == "photo":
         send_photo(details)

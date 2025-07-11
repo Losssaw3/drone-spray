@@ -10,7 +10,7 @@ from time import sleep
 from confluent_kafka import Consumer, OFFSET_BEGINNING
 
 current_azimuth = 0
-current_speed = 2.0
+current_speed = 3.0
 current_target = [0.0 , 0.0]
 
 FLIGHT_STATUS_PATH = "/shared/flight_status"

@@ -45,8 +45,10 @@ def send_status():
                 proceed_to_deliver(uuid4().__str__(), {
                 "deliver_to": "message-sending",
                 "operation": "flight-report",
-                "status": status
+                "status": status,
+                "report": "flight ended"
             })
+                break
 
             with open(INIT_PATH, 'r') as file:
                 content = file.read().strip()

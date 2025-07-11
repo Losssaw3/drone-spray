@@ -21,6 +21,12 @@ def read_init() -> bool:
 
     return status == "1"
 
+def read_finish() -> bool:
+    with open(INIT_PATH, "r") as file:
+        status = file.read()
+
+    return status == "2"
+
 def imitate_height():
     while True:
         height = standart_height + randint(-2 , 2)
@@ -42,8 +48,27 @@ def imitate_height():
                 "operation": "current_height",
                 "height": height
             })
-        
+        if read_finish():
+            with open(COORDS, 'r') as file:
+                data = file.read().strip()
+            values = [x.strip() for x in data.split(',')]
+            values[2] = 0
+            new_data = ', '.join(values)
+            with open(COORDS, 'w') as file:
+                file.write(new_data)
+            proceed_to_deliver(uuid4().__str__(), {
+                "deliver_to": "limiter",
+                "operation": "current_height",
+                "height": 0
+            })
+            proceed_to_deliver(uuid4().__str__(), {
+                "deliver_to": "drone-status-control",
+                "operation": "current_height",
+                "height": 0
+            })
+            break     
         sleep(randint(7, 10))
+
 
 
 def proceed_to_deliver(id, details):

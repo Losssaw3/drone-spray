@@ -13,7 +13,7 @@ from .producer import proceed_to_deliver
 
 MODULE_NAME = os.getenv("MODULE_NAME")
 
-standard_speed = 2.0
+standard_speed = 3.0
 forward_route = []
 spray_route = []
 backward_route = []

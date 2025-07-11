@@ -13,6 +13,7 @@ _requests_queue: multiprocessing.Queue = None
 INIT_PATH: str = "/shared/init"
 MODULE_NAME: str = os.getenv("MODULE_NAME")
 COORDS: str = "/shared/coords"
+FLIGHT_STATUS_PATH: str = "/shared/flight_status"
 
 
 def read_init() -> bool:
@@ -20,6 +21,12 @@ def read_init() -> bool:
         status = file.read()
 
     return status == "1"
+
+def read_finish() -> bool:
+    with open(FLIGHT_STATUS_PATH, "r") as file:
+        status = file.read()
+
+    return status == "2"
 
 def read_coords():
     while True:
@@ -34,7 +41,9 @@ def read_coords():
                 "deliver_to": "complex",
                 "operation": "current_coords_gps",
                 "coords": current_coords
-            })        
+            })
+        if read_finish():
+            break   
         sleep(2)
 
 
