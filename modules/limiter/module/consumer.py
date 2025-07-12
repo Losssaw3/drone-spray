@@ -18,8 +18,11 @@ forward_flag = False
 spray_flag = False
 backward_flag = False
 
+deviation = 4
+speed = 3
 current_height = 0.0
 current_coords = [0.0 , 0.0]
+current_target = []
 
 forward_route_valid = []
 spray_route_valid = []
@@ -39,7 +42,7 @@ def set_mission(details):
 
 def set_routes(details):
     """ Устанавливает маршруты для движения дрона. """
-    global forward_route, spray_route, backward_route, forward_flag
+    global forward_route, spray_route, backward_route, forward_flag , current_target
 
     forward_route = details.get("mission").get("forward_route")
     spray_route = details.get("mission").get("spray")
@@ -52,9 +55,13 @@ def set_routes(details):
                 "azimuth": azimuth,
                 "end": target
             })
+    current_target = target
     forward_flag = True
     with open(FLIGHT_STATUS_PATH, 'w') as file:
         file.write("1")
+
+def calculate_distance(x1, y1, x2, y2):
+    return math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
 
 def float_equal_alt(x1: float, y1: float, x2: float, y2: float, epsilon: float = 5) -> bool:
     return (abs(x1 - x2) <= epsilon and abs(y1 - y2) <= epsilon)
@@ -70,8 +77,26 @@ def calculate_azimuth(x1, y1, x2, y2):
     azimuth = (angle_deg + 360) % 360
     return azimuth
 
+def control_servos():
+    global current_coords , current_target , deviation , speed
+    while True:
+        _current_target = current_target
+        prev_distance = calculate_distance(current_coords[0] , current_coords[1] , _current_target[0] , _current_target[1])
+        sleep(3)
+        new_distance = calculate_distance(current_coords[0] , current_coords[1] , _current_target[0] , _current_target[1])
+        if new_distance > prev_distance and _current_target == current_target:
+            print("Deviation detected")
+            azimuth = calculate_azimuth(current_coords[0] , current_coords[1] , _current_target[0] , _current_target[1])
+            proceed_to_deliver(uuid4().__str__(), {
+                "deliver_to": "servo",
+                "operation": "move",
+                "azimuth": azimuth,
+                "speed": speed,
+                "end": _current_target
+            })
+
 def start_forward():
-    global forward_route, spray_route, backward_route, current_index, forward_flag
+    global forward_route, spray_route, backward_route, current_index, forward_flag , current_target
     while True:
         with open(FLIGHT_STATUS_PATH, 'r') as file:
             content = file.read().strip()
@@ -91,6 +116,7 @@ def start_forward():
                   forward_route[current_index + 1].get("end")[1]
             )
             target = forward_route[current_index + 1].get("end")
+            current_target = target
             speed = forward_route[current_index + 1].get("speed")
             proceed_to_deliver(uuid4().__str__(), {
                 "deliver_to": "servo",
@@ -111,7 +137,7 @@ def pause_flight():
             })
 
 def start_backward():
-    global backward_route, current_index , spray_flag
+    global backward_route, current_index , spray_flag, current_target
     while True:
         if backward_route and backward_flag and float_equal_alt(current_coords[0] , current_coords[1] , backward_route[-1].get("end")[0], backward_route[-1].get("end")[1]):
             print("Окончание маршрута")
@@ -127,6 +153,7 @@ def start_backward():
                     backward_route[current_index + 1].get("end")[1]
                 )
                 target = backward_route[current_index + 1].get("end")
+                current_target = target
                 speed = backward_route[current_index + 1].get("speed")
                 proceed_to_deliver(uuid4().__str__(), {
                     "deliver_to": "servo",
@@ -138,7 +165,7 @@ def start_backward():
                 current_index += 1
 
 def start_spraying():
-    global spray_route, current_index , spray_flag , backward_flag
+    global spray_route, current_index , spray_flag , backward_flag, current_target
     while True:
         if spray_route and spray_flag and not forward_flag and float_equal_alt(current_coords[0] , current_coords[1] , spray_route[-1].get("end")[0], spray_route[-1].get("end")[1]):
             spray_flag = False
@@ -146,6 +173,7 @@ def start_spraying():
             print("Окончание маршрута распрыскивания")
             azimuth = calculate_azimuth(current_coords[0] , current_coords[1] , backward_route[current_index].get("end")[0], backward_route[current_index].get("end")[1])
             target = backward_route[current_index].get("end")
+            current_target = target
             speed = backward_route[current_index].get("speed")
             proceed_to_deliver(uuid4().__str__(), {
                 "deliver_to": "servo",
@@ -166,6 +194,7 @@ def start_spraying():
                     spray_route[current_index + 1].get("end")[1]
                 )
                 target = spray_route[current_index + 1].get("end")
+                current_target = target
                 speed = spray_route[current_index + 1].get("speed")
                 proceed_to_deliver(uuid4().__str__(), {
                     "deliver_to": "servo",
@@ -178,7 +207,7 @@ def start_spraying():
 
 def handle_event(id, details_str):
     """ Обработчик входящих в модуль задач. """
-    global current_height , current_coords , spray_flag , current_index
+    global current_height , current_coords , spray_flag , current_index , current_target
     details = json.loads(details_str)
     source: str = details.get("source")
     deliver_to: str = details.get("deliver_to")
@@ -201,6 +230,7 @@ def handle_event(id, details_str):
         spray_flag = True
         azimuth = calculate_azimuth(current_coords[0] , current_coords[1] , spray_route[current_index].get("end")[0], spray_route[current_index].get("end")[1])
         target = spray_route[current_index].get("end")
+        current_target = target
         speed = spray_route[current_index].get("speed")
         proceed_to_deliver(uuid4().__str__(), {
                 "deliver_to": "servo",

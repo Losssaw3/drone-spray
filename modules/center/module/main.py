@@ -3,6 +3,7 @@ import requests
 import random
 from time import sleep
 
+
 app = Flask(__name__)
 
 DRONE_START_URL = "http://communication:8000/start_mission"
