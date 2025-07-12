@@ -2,15 +2,61 @@ from flask import Flask, request, jsonify
 import requests
 import random
 from time import sleep
+import json
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives.serialization import load_pem_private_key, load_pem_public_key
+from cryptography.hazmat.backends import default_backend
 
 
 app = Flask(__name__)
 
 DRONE_START_URL = "http://communication:8000/start_mission"
 APPROVAL_PHOTO_URL = "http://communication:8000/confirm_photo"
+PRIVATE_KEY_PATH = "../../../private_key.pem"
+PUBLIC_KEY_PATH = "../../../public_key.pem"
+
 work_flag = False
 start_point = []
 ready_flag = False
+
+
+
+def load_private_key(password: bytes = None):
+    """Загружает приватный ключ из PEM-файла"""
+    with open(PRIVATE_KEY_PATH, "rb") as key_file:
+        return load_pem_private_key(
+            key_file.read(),
+            password=password,
+            backend=default_backend()
+        )
+
+def load_public_key():
+    """Загружает публичный ключ из PEM-файла"""
+    with open(PUBLIC_KEY_PATH, "rb") as key_file:
+        return load_pem_public_key(
+            key_file.read(),
+            backend=default_backend()
+        )
+
+def sign_json(data: dict, private_key) -> str:
+    """Подписывает JSON-данные и возвращает подпись в base64"""
+    # Конвертируем словарь в стабильный JSON-формат (с сортировкой ключей)
+    json_str = json.dumps(data, sort_keys=True, ensure_ascii=False)
+    
+    # Подписываем текст (предварительно конвертировав в bytes)
+    signature = private_key.sign(
+        json_str.encode('utf-8'),
+        padding.PSS(
+            mgf=padding.MGF1(hashes.SHA256()),
+            salt_length=padding.PSS.MAX_LENGTH
+        ),
+        hashes.SHA256()
+    )
+    
+    # Возвращаем подпись в base64 для удобной передачи
+    import base64
+    return base64.b64encode(signature).decode('ascii')
 
 class Center:
     def __init__(self):
