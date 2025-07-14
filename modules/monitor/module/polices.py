@@ -5,6 +5,7 @@ policies = (
     {"src": "camera", "dst": "mission-control", "opr": "photo"},
 
     {"src": "communication", "dst": "encryption", "opr": "turn_on"},
+    {"src": "communication", "dst": "encryption", "opr": "start_mission"},
     {"src": "communication", "dst": "encryption", "opr": "confirm_photo"},
 
     {"src": "complex", "dst": "limiter", "opr": "current_coords"},

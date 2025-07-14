@@ -8,7 +8,13 @@ from uuid import uuid4
 from time import sleep
 from confluent_kafka import Consumer, OFFSET_BEGINNING
 from .producer import proceed_to_deliver
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives.serialization import load_pem_private_key, load_pem_public_key
+from cryptography.hazmat.backends import default_backend
 
+PRIVATE_KEY_PATH = "/shared/private_key.pem"
+PUBLIC_KEY_PATH = "/shared/public_key.pem"
 
 MODULE_NAME = os.getenv("MODULE_NAME")
 consumers = ["limiter", "mission-control", "task-orchestrator"]
@@ -17,6 +23,42 @@ def turn_on():
             "deliver_to": "drone-status-control",
             "operation": "turn_on",
         })
+
+def load_private_key(password: bytes = None):
+    """Загружает приватный ключ из PEM-файла"""
+    with open(PRIVATE_KEY_PATH, "rb") as key_file:
+        return load_pem_private_key(
+            key_file.read(),
+            password=password,
+            backend=default_backend()
+        )
+
+def load_public_key():
+    """Загружает публичный ключ из PEM-файла"""
+    with open(PUBLIC_KEY_PATH, "rb") as key_file:
+        return load_pem_public_key(
+            key_file.read(),
+            backend=default_backend()
+        )
+
+def sign_json(data: dict, private_key) -> str:
+    """Подписывает JSON-данные и возвращает подпись в base64"""
+    # Конвертируем словарь в стабильный JSON-формат (с сортировкой ключей)
+    json_str = json.dumps(data, sort_keys=True, ensure_ascii=False)
+    
+    # Подписываем текст (предварительно конвертировав в bytes)
+    signature = private_key.sign(
+        json_str.encode('utf-8'),
+        padding.PSS(
+            mgf=padding.MGF1(hashes.SHA256()),
+            salt_length=padding.PSS.MAX_LENGTH
+        ),
+        hashes.SHA256()
+    )
+    
+    # Возвращаем подпись в base64 для удобной передачи
+    import base64
+    return base64.b64encode(signature).decode('ascii')
 
 def start_mission(details):
     global consumers
@@ -29,36 +71,71 @@ def start_mission(details):
             })
 
 def sign_and_send(details):
+    status = details.get("status")
+    signature = sign_json(status, load_private_key())
+    details["signature"] = signature
+    details["check"] = status
     print("signing message")
     proceed_to_deliver(uuid4().__str__(),details)
 
-def verify():
+def verify(details):
+    """ Проверяет подпись сообщения. """
+    if "signature" in details and "check" in details:
+        print("verifying signature")
+        import base64
+
+        signature_b64 = details.get("signature")
+        check = details.get("check")
+
+        signature = base64.b64decode(signature_b64)
+        public_key = load_public_key()
+
+        try:
+            public_key.verify(
+                signature,
+                json.dumps(check, sort_keys=True, ensure_ascii=False).encode('utf-8'),
+                padding.PSS(
+                    mgf=padding.MGF1(hashes.SHA256()),
+                    salt_length=padding.PSS.MAX_LENGTH
+                ),
+                hashes.SHA256()
+            )
+            print("Signature is valid.")
+            return True
+        except Exception as e:
+            print(f"Signature verification failed: {e}")
+            return False
     return True
 
-def handle_event(id, details_str):
-    """ Обработчик входящих в модуль задач. """
 
+def handle_event(id, details_str):
     details = json.loads(details_str)
     source: str = details.get("source")
+    deliver_to = None
+    operation = None
+
     if source == "communication":
-        if verify():
+        if verify(details):
             deliver_to: str = details.get("deliver_to")
             operation: str = details.get("operation")
             if operation == "turn_on":
-                turn_on()
+                    turn_on()
             if operation == "start_mission":
                 start_mission(details)
             if operation == "confirm_photo":
                 details["deliver_to"] = "mission-control"
                 proceed_to_deliver(uuid4().__str__(),details)
-                
+        else:
+            print("Mission was rejected due invalid signature!")
+
     elif source == "message-sending": # status , photo
         deliver_to: str = details.get("deliver_to")
         operation: str = details.get("operation")
         details["deliver_to"] = "communication"
         sign_and_send(details)
-    print(f"[info] handling event {id}, "
-          f"{source}->{deliver_to}: {operation}")
+
+    print(f"[info] handling event {id}, {source}->{deliver_to}: {operation}")
+
 
 def consumer_job(args, config):
     consumer = Consumer(config)

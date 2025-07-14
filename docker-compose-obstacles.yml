@@ -24,6 +24,8 @@ services:
     container_name: center
     environment:
       MODULE_NAME: center
+    volumes:
+      - ./shared:/shared
     ports:
       - "8002:8000"
     entrypoint:
@@ -37,6 +39,8 @@ services:
     container_name: mobile
     environment:
       MODULE_NAME: mobile
+    volumes:
+      - ./shared:/shared
     ports:
       - "8003:8000"
     entrypoint:
@@ -170,14 +174,14 @@ services:
     ports:
       - 6072:6072
 
-  movement-calculation:
-    build: ./modules/movement-calculation
+  fake-movement-calculation:
+    build: ./modules/fake-modules/fake-movement-calculation
     entrypoint:
       - bash
       - -c
       - |
         sleep 60 && venv/bin/python start.py /shared/config.ini
-    container_name: movement-calculation
+    container_name: fake-movement-calculation
     environment:
       - MODULE_NAME=movement-calculation
       - MODULE_PORT=6073
@@ -250,14 +254,14 @@ services:
     ports:
       - 6077:6077
 
-  servo:
-    build: ./modules/servo
+  fake-servo:
+    build: ./modules/fake-modules/fake-servo
     entrypoint:
       - bash
       - -c
       - |
         sleep 60 && venv/bin/python start.py /shared/config.ini
-    container_name: servo
+    container_name: fake-servo
     environment:
       - MODULE_NAME=servo
       - MODULE_PORT=6078

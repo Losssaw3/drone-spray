@@ -33,32 +33,51 @@ spray_route = []
 backward_route = []
 current_index = 0
 
-
 def set_mission(details):
     global forward_route_valid,spray_route_valid,backward_route_valid
     forward_route_valid = details.get("mission").get("forward_route")
     spray_route_valid = details.get("mission").get("spray")
     backward_route_valid = details.get("mission").get("backward_route")
 
-def set_routes(details):
-    """ Устанавливает маршруты для движения дрона. """
-    global forward_route, spray_route, backward_route, forward_flag , current_target
-
+def check_route(details):
+    global forward_route_valid,spray_route_valid,backward_route_valid
+    valid_flag = True
     forward_route = details.get("mission").get("forward_route")
     spray_route = details.get("mission").get("spray")
     backward_route = details.get("mission").get("backward_route")
-    azimuth = forward_route[current_index].get("azimuth")
-    target = forward_route[current_index].get("end")
-    proceed_to_deliver(uuid4().__str__(), {
-                "deliver_to": "servo",
-                "operation": "move",
-                "azimuth": azimuth,
-                "end": target
-            })
-    current_target = target
-    forward_flag = True
-    with open(FLIGHT_STATUS_PATH, 'w') as file:
-        file.write("1")
+    for i in range(len(forward_route_valid) - 1):
+        if  forward_route_valid[i] != forward_route[i].get("start") or forward_route[-1].get("end") != forward_route_valid[-1]:
+            valid_flag = False
+    for i in range(len(spray_route_valid) - 1):
+        if  spray_route_valid[i] != spray_route[i].get("start") or spray_route[-1].get("end") != spray_route_valid[-1]:
+            valid_flag = False
+    for i in range(len(backward_route_valid) - 1):
+        if  backward_route_valid[i] != backward_route[i].get("start") or backward_route[-1].get("end") != backward_route_valid[-1]:
+            valid_flag = False
+    return valid_flag
+
+def set_routes(details):
+    """ Устанавливает маршруты для движения дрона. """
+    global forward_route, spray_route, backward_route, forward_flag , current_target
+    if check_route(details):
+        forward_route = details.get("mission").get("forward_route")
+        spray_route = details.get("mission").get("spray")
+        backward_route = details.get("mission").get("backward_route")
+        
+        azimuth = forward_route[current_index].get("azimuth")
+        target = forward_route[current_index].get("end")
+        proceed_to_deliver(uuid4().__str__(), {
+                    "deliver_to": "servo",
+                    "operation": "move",
+                    "azimuth": azimuth,
+                    "end": target
+                })
+        current_target = target
+        forward_flag = True
+        with open(FLIGHT_STATUS_PATH, 'w') as file:
+            file.write("1")
+    else:
+        print("Mission was replaced can't start flight!")
 
 def calculate_distance(x1, y1, x2, y2):
     return math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
@@ -80,20 +99,21 @@ def calculate_azimuth(x1, y1, x2, y2):
 def control_servos():
     global current_coords , current_target , deviation , speed
     while True:
-        _current_target = current_target
-        prev_distance = calculate_distance(current_coords[0] , current_coords[1] , _current_target[0] , _current_target[1])
-        sleep(3)
-        new_distance = calculate_distance(current_coords[0] , current_coords[1] , _current_target[0] , _current_target[1])
-        if new_distance > prev_distance and _current_target == current_target:
-            print("Deviation detected")
-            azimuth = calculate_azimuth(current_coords[0] , current_coords[1] , _current_target[0] , _current_target[1])
-            proceed_to_deliver(uuid4().__str__(), {
-                "deliver_to": "servo",
-                "operation": "move",
-                "azimuth": azimuth,
-                "speed": speed,
-                "end": _current_target
-            })
+        if current_coords and current_target:
+            _current_target = current_target
+            prev_distance = calculate_distance(current_coords[0] , current_coords[1] , _current_target[0] , _current_target[1])
+            sleep(3)
+            new_distance = calculate_distance(current_coords[0] , current_coords[1] , _current_target[0] , _current_target[1])
+            if new_distance > prev_distance and _current_target == current_target:
+                print("Deviation detected")
+                azimuth = calculate_azimuth(current_coords[0] , current_coords[1] , _current_target[0] , _current_target[1])
+                proceed_to_deliver(uuid4().__str__(), {
+                    "deliver_to": "servo",
+                    "operation": "move",
+                    "azimuth": azimuth,
+                    "speed": speed,
+                    "end": _current_target
+                })
 
 def start_forward():
     global forward_route, spray_route, backward_route, current_index, forward_flag , current_target
@@ -285,3 +305,4 @@ def start_consumer(args, config):
     threading.Thread(target=start_forward).start()
     threading.Thread(target=start_spraying).start()
     threading.Thread(target=start_backward).start()
+    threading.Thread(target=control_servos).start()

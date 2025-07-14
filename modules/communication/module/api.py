@@ -15,7 +15,6 @@ MODULE_NAME: str = os.getenv("MODULE_NAME")
 REQUEST_ROUTE_FROM_CENTER_URL = "http://center:8000/start"
 
 
-# Очереди задач и ответов
 _requests_queue: multiprocessing.Queue = None
 _response_queue: multiprocessing.Queue = None
 
@@ -31,19 +30,25 @@ def turn_on():
 
 @app.route('/start_mission', methods = ['POST'])
 def start_mission():
-    mission = request.get_json()
+    payload = request.get_json()
     proceed_to_deliver(uuid4().__str__(), {
-            "deliver_to": "encryption",
-            "operation": "start_mission",
-            "mission": mission
-        })
+        "deliver_to": "encryption",
+        "operation": "start_mission",
+        "mission": payload.get("mission"),
+        "signature": payload.get("signature"),
+        "check": payload.get("check")
+    })
     return jsonify({"status": "ok"}) , 200
+
 
 @app.route('/confirm_photo' , methods = ['GET'])
 def confirm_photo():
+    payload = request.get_json()
     proceed_to_deliver(uuid4().__str__(), {
             "deliver_to": "encryption",
             "operation": "confirm_photo",
+            "check": payload.get("check"),
+            "signature": payload.get("signature"),
         })
     return jsonify({"status": "confirmation received"}) , 200
 
