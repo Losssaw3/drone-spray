@@ -19,24 +19,6 @@ MODULES := monitor \
 		   sprayer-control \
 		   task-orchestrator \
 		   servo \
-
-FAKE_MODULES := monitor \
-           communication \
-		   encryption \
-		   camera \
-		   complex \
-		   center \
-		   gps \
-		   internal \
-		   drone-status-control \
-		   movement-calculation \
-		   limiter \
-		   message-sending \
-		   mission-control \
-		   sprayer \
-		   sprayer-control \
-		   task-orchestrator \
-		   servo \
 		   
 SLEEP_TIME := 20
 
@@ -72,6 +54,8 @@ permissions:
 	chmod a+w $(PATH_PREFIX)/shared/coords
 	chmod a+w $(PATH_PREFIX)/shared/init
 	chmod a+w $(PATH_PREFIX)/shared/flight_status
+	chmod 644 $(PATH_PREFIX)/shared/private_key.pem
+
 
 all: clean run delay30s test
 
@@ -80,16 +64,23 @@ delay30s:
 
 clean:
 	docker-compose -f docker-compose-base.yml down
+	docker-compose -f docker-compose-obstacles.yml down
 	@echo "0, 0, 0" > $(PATH_PREFIX)/shared/coords
 	@echo "0" > $(PATH_PREFIX)/shared/init
 	@echo "0" > $(PATH_PREFIX)/shared/flight_status
 logs:
 	docker-compose -f docker-compose-base.yml logs -f --tail 100
+	docker-compose -f docker-compose-obstacles.yml logs -f --tail 100
+
+generate_keys:
+	chmod +x generate_keys.sh
+	./generate_keys.sh
 
 pipenv:
 	pipenv install -r requirements.txt
 
-prepare: permissions pipenv
+prepare: permissions pipenv generate_keys
+
 
 test:
 	pipenv run pytest -sv

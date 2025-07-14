@@ -8,3 +8,4 @@ Pipfile
 .vscode
 updater/tmp/*
 .pytest_cache
+*.pem

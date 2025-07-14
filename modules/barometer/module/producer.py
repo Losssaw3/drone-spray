@@ -52,7 +52,7 @@ def imitate_height():
             with open(COORDS, 'r') as file:
                 data = file.read().strip()
             values = [x.strip() for x in data.split(',')]
-            values[2] = 0
+            values[2] = '0'
             new_data = ', '.join(values)
             with open(COORDS, 'w') as file:
                 file.write(new_data)
