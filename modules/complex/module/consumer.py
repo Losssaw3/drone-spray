@@ -17,26 +17,53 @@ INIT_PATH: str = "/shared/init"
 FLIGHT_STATUS_PATH: str = "/shared/flight_status"
 
 def set_ins_coords(details):
+    """
+    Updates the INS coordinates.
+    
+    Args:
+        details (dict): INS coordinates.
+    """
     global current_coords_ins
     current_coords_ins = details.get("coords")
 
 def set_gps_coords(details):
+    """
+    Updates the GPS coordinates.
+    
+    Args:
+        details (dict): GPS coordinates.
+    """
     global current_coords_gps
     current_coords_gps = details.get("coords")
 
 def read_init() -> bool:
+    """
+    Reads the initialization status from the INIT_PATH file.
+    
+    Returns:
+        bool: True if the drone is initialized, False otherwise.
+    """
     with open(INIT_PATH, "r") as file:
         status = file.read()
 
     return status == "1"
 
 def read_finish() -> bool:
+    """
+    Reads the flight status from the FLIGHT_STATUS_PATH file.
+    
+    Returns:
+        bool: True if the flight is finished, False otherwise.
+    """
     with open(FLIGHT_STATUS_PATH, "r") as file:
         status = file.read()
 
     return status == "2"
 
 def complex():
+    """
+    Calculates the average coordinates from GPS and INS data and sends them to the limiter and drone-status-control modules.
+    """
     global coords , current_coords_gps , current_coords_ins
     while True:
         if read_init():
@@ -57,6 +84,13 @@ def complex():
         sleep(2)
 
 def handle_event(id, details_str):
+    """
+    Handles incoming events and processes operations like updating GPS or INS coordinates.
+    
+    Args:
+        id (str): Event ID.
+        details_str (str): JSON string containing event details.
+    """
     global work_flag
     """ Обработчик входящих в модуль задач. """
     details = json.loads(details_str)
@@ -76,6 +110,13 @@ def handle_event(id, details_str):
     
 
 def consumer_job(args, config):
+    """
+    Listens for incoming Kafka messages and processes them.
+    
+    Args:
+        args: Command-line arguments.
+        config (dict): Kafka consumer configuration.
+    """
     consumer = Consumer(config)
     def reset_offset(verifier_consumer, partitions):
         if not args.reset:
@@ -110,6 +151,13 @@ def consumer_job(args, config):
         consumer.close()
 
 def start_consumer(args, config):
+    """
+    Starts the consumer job and complex coordinate calculation in separate threads.
+    
+    Args:
+        args: Command-line arguments.
+        config (dict): Kafka consumer configuration.
+    """
     print(f"{MODULE_NAME}_consumer started")
     threading.Thread(target=lambda: consumer_job(args, config)).start()
     threading.Thread(target=complex).start()

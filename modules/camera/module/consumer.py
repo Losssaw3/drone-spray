@@ -12,6 +12,9 @@ from .producer import proceed_to_deliver
 MODULE_NAME = os.getenv("MODULE_NAME")
 
 def photo():
+    """
+    Takes a photo and sends it to the mission-control module.
+    """
     photo_id = "image_" + str(uuid4())
     print("Taking photo of area...")
     proceed_to_deliver(str(uuid4()), {
@@ -21,6 +24,13 @@ def photo():
     })
 
 def handle_event(id, details_str):
+    """
+    Handles incoming events and processes operations like taking a photo.
+    
+    Args:
+        id (str): Event ID.
+        details_str (str): JSON string containing event details.
+    """
     global work_flag
     """ Обработчик входящих в модуль задач. """
     details = json.loads(details_str)
@@ -35,6 +45,13 @@ def handle_event(id, details_str):
     
 
 def consumer_job(args, config):
+    """
+    Listens for incoming Kafka messages and processes them.
+    
+    Args:
+        args: Command-line arguments.
+        config (dict): Kafka consumer configuration.
+    """
     consumer = Consumer(config)
     def reset_offset(verifier_consumer, partitions):
         if not args.reset:
@@ -69,5 +86,12 @@ def consumer_job(args, config):
         consumer.close()
 
 def start_consumer(args, config):
+    """
+    Starts the consumer job in a separate thread.
+    
+    Args:
+        args: Command-line arguments.
+        config (dict): Kafka consumer configuration.
+    """
     print(f"{MODULE_NAME}_consumer started")
     threading.Thread(target=lambda: consumer_job(args, config)).start()

@@ -22,6 +22,12 @@ app = Flask(__name__)
 
 @app.route('/turn_on')
 def turn_on():
+    """
+    Sends a request to turn on the drone.
+    
+    Returns:
+        Response: JSON response indicating the status.
+    """
     proceed_to_deliver(uuid4().__str__(), {
             "deliver_to": "encryption",
             "operation": "turn_on",
@@ -30,6 +36,12 @@ def turn_on():
 
 @app.route('/start_mission', methods = ['POST'])
 def start_mission():
+    """
+    Sends a mission to the encryption module.
+    
+    Returns:
+        Response: JSON response indicating the status.
+    """
     payload = request.get_json()
     proceed_to_deliver(uuid4().__str__(), {
         "deliver_to": "encryption",
@@ -43,6 +55,12 @@ def start_mission():
 
 @app.route('/confirm_photo' , methods = ['GET'])
 def confirm_photo():
+    """
+    Sends a photo confirmation to the encryption module.
+    
+    Returns:
+        Response: JSON response indicating the status.
+    """
     payload = request.get_json()
     proceed_to_deliver(uuid4().__str__(), {
             "deliver_to": "encryption",
@@ -55,6 +73,12 @@ def confirm_photo():
 
 @app.route('/start')
 def start():
+    """
+    Sends a request to start the drone.
+    
+    Returns:
+        Response: JSON response indicating the status.
+    """
     try:
         data = request.get_json()
         if data.get("state") == "start":
@@ -65,6 +89,13 @@ def start():
 
 
 def start_web(requests_queue, response_queue):
+    """
+    Starts the Flask web server.
+    
+    Args:
+        requests_queue (multiprocessing.Queue): Queue for incoming requests.
+        response_queue (multiprocessing.Queue): Queue for outgoing responses.
+    """
     global _requests_queue
     global _response_queue
 

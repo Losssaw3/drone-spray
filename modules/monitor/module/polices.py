@@ -32,6 +32,7 @@ policies = (
 
     {"src": "limiter", "dst": "servo", "opr": "move"},
     {"src": "limiter", "dst": "servo", "opr": "pause"},
+    {"src": "limiter", "dst": "message-sending", "opr": "status"},
 
     {"src": "message-sending", "dst": "encryption", "opr": "status"},
     {"src": "message-sending", "dst": "encryption", "opr": "photo"},

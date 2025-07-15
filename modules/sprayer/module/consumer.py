@@ -15,13 +15,26 @@ work_flag = False
 
 
 def start_spraying():
+    """
+    Activates the sprayer.
+    """
     print("Опрыскиватель включен...")
     
 def stop_spraying():
+    """
+    Deactivates the sprayer.
+    """
     print("Опрыскиватель выключен...")
 
 
 def handle_event(id, details_str):
+    """
+    Handles incoming events and processes operations like turning the sprayer on or off.
+    
+    Args:
+        id (str): Event ID.
+        details_str (str): JSON string containing event details.
+    """
     global work_flag
     """ Обработчик входящих в модуль задач. """
     details = json.loads(details_str)
@@ -41,6 +54,13 @@ def handle_event(id, details_str):
     
 
 def consumer_job(args, config):
+    """
+    Starts the consumer job to listen for incoming Kafka messages.
+    
+    Args:
+        args: Command-line arguments.
+        config (dict): Kafka consumer configuration.
+    """
     consumer = Consumer(config)
     def reset_offset(verifier_consumer, partitions):
         if not args.reset:
@@ -75,5 +95,12 @@ def consumer_job(args, config):
         consumer.close()
 
 def start_consumer(args, config):
+    """
+    Initializes the consumer job in a separate thread.
+    
+    Args:
+        args: Command-line arguments.
+        config (dict): Kafka consumer configuration.
+    """
     print(f"{MODULE_NAME}_consumer started")
     threading.Thread(target=lambda: consumer_job(args, config)).start()

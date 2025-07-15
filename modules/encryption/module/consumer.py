@@ -19,13 +19,24 @@ PUBLIC_KEY_PATH = "/shared/public_key.pem"
 MODULE_NAME = os.getenv("MODULE_NAME")
 consumers = ["limiter", "mission-control", "task-orchestrator"]
 def turn_on():
+    """
+    Sends a command to turn on the drone.
+    """
     proceed_to_deliver(uuid4().__str__(), {
             "deliver_to": "drone-status-control",
             "operation": "turn_on",
         })
 
 def load_private_key(password: bytes = None):
-    """Загружает приватный ключ из PEM-файла"""
+    """
+    Loads the private key from a PEM file.
+    
+    Args:
+        password (bytes, optional): Password for the private key.
+    
+    Returns:
+        Private key object.
+    """
     with open(PRIVATE_KEY_PATH, "rb") as key_file:
         return load_pem_private_key(
             key_file.read(),
@@ -34,7 +45,12 @@ def load_private_key(password: bytes = None):
         )
 
 def load_public_key():
-    """Загружает публичный ключ из PEM-файла"""
+    """
+    Loads the public key from a PEM file.
+    
+    Returns:
+        Public key object.
+    """
     with open(PUBLIC_KEY_PATH, "rb") as key_file:
         return load_pem_public_key(
             key_file.read(),
@@ -42,7 +58,16 @@ def load_public_key():
         )
 
 def sign_json(data: dict, private_key) -> str:
-    """Подписывает JSON-данные и возвращает подпись в base64"""
+    """
+    Signs JSON data and returns the signature in base64.
+    
+    Args:
+        data (dict): JSON data to sign.
+        private_key: Private key object.
+    
+    Returns:
+        str: Base64-encoded signature.
+    """
     # Конвертируем словарь в стабильный JSON-формат (с сортировкой ключей)
     json_str = json.dumps(data, sort_keys=True, ensure_ascii=False)
     
@@ -61,6 +86,12 @@ def sign_json(data: dict, private_key) -> str:
     return base64.b64encode(signature).decode('ascii')
 
 def start_mission(details):
+    """
+    Sends the mission details to all consumers.
+    
+    Args:
+        details (dict): Mission details.
+    """
     global consumers
     mission = details.get("mission")
     for consumer in consumers:
@@ -71,6 +102,12 @@ def start_mission(details):
             })
 
 def sign_and_send(details):
+    """
+    Signs the status and sends it to the communication module.
+    
+    Args:
+        details (dict): Status details.
+    """
     status = details.get("status")
     signature = sign_json(status, load_private_key())
     details["signature"] = signature
@@ -79,6 +116,15 @@ def sign_and_send(details):
     proceed_to_deliver(uuid4().__str__(),details)
 
 def verify(details):
+    """
+    Verifies the signature of a message.
+    
+    Args:
+        details (dict): Message details containing signature and check data.
+    
+    Returns:
+        bool: True if the signature is valid, False otherwise.
+    """
     """ Проверяет подпись сообщения. """
     if "signature" in details and "check" in details:
         print("verifying signature")
@@ -109,6 +155,13 @@ def verify(details):
 
 
 def handle_event(id, details_str):
+    """
+    Handles incoming events and processes operations like turning on the drone or starting a mission.
+    
+    Args:
+        id (str): Event ID.
+        details_str (str): JSON string containing event details.
+    """
     details = json.loads(details_str)
     source: str = details.get("source")
     deliver_to = None
@@ -138,6 +191,13 @@ def handle_event(id, details_str):
 
 
 def consumer_job(args, config):
+    """
+    Listens for incoming Kafka messages and processes them.
+    
+    Args:
+        args: Command-line arguments.
+        config (dict): Kafka consumer configuration.
+    """
     consumer = Consumer(config)
 
     def reset_offset(verifier_consumer, partitions):
@@ -173,5 +233,12 @@ def consumer_job(args, config):
         consumer.close()
 
 def start_consumer(args, config):
+    """
+    Starts the consumer job in a separate thread.
+    
+    Args:
+        args: Command-line arguments.
+        config (dict): Kafka consumer configuration.
+    """
     print(f"{MODULE_NAME}_consumer started")
     threading.Thread(target=lambda: consumer_job(args, config)).start()

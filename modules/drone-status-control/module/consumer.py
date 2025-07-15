@@ -19,6 +19,10 @@ current_coordinates = [0.0 , 0.0]
 battery_level = 0
 
 def initialize():
+    """
+    Initializes the drone by setting its coordinates, height, and battery level.
+    Sends the initial status to the message-sending module.
+    """
     global current_coordinates, battery_level, current_height
     with open(INIT_PATH, 'w') as file:
             file.write('1')
@@ -35,6 +39,9 @@ def initialize():
         })
 
 def send_status():
+    """
+    Periodically sends the drone's status and coordinates to the message-sending and mission-control modules.
+    """
     global current_coordinates, battery_level, current_height
     while True:
         status = {"coords": current_coordinates,"height": current_height,"battery": battery_level}
@@ -72,8 +79,14 @@ def send_status():
         sleep(2)
 
 def handle_event(id, details_str):
+    """
+    Handles incoming events and processes operations like turning on the drone or updating coordinates.
+    
+    Args:
+        id (str): Event ID.
+        details_str (str): JSON string containing event details.
+    """
     global current_coordinates, battery_level, current_height
-    """ Обработчик входящих в модуль задач. """
     details = json.loads(details_str)
     source: str = details.get("source")
     deliver_to: str = details.get("deliver_to")
@@ -88,6 +101,13 @@ def handle_event(id, details_str):
           f"{source}->{deliver_to}: {operation}")
     
 def consumer_job(args, config):
+    """
+    Listens for incoming Kafka messages and processes them.
+    
+    Args:
+        args: Command-line arguments.
+        config (dict): Kafka consumer configuration.
+    """
     consumer = Consumer(config)
 
     def reset_offset(verifier_consumer, partitions):
@@ -123,6 +143,13 @@ def consumer_job(args, config):
         consumer.close()
 
 def start_consumer(args, config):
+    """
+    Starts the consumer job and status reporting in separate threads.
+    
+    Args:
+        args: Command-line arguments.
+        config (dict): Kafka consumer configuration.
+    """
     print(f"{MODULE_NAME}_consumer started")
     threading.Thread(target=lambda: consumer_job(args, config)).start()
     threading.Thread(target=send_status).start()

@@ -54,7 +54,6 @@ permissions:
 	chmod a+w $(PATH_PREFIX)/shared/coords
 	chmod a+w $(PATH_PREFIX)/shared/init
 	chmod a+w $(PATH_PREFIX)/shared/flight_status
-	chmod 644 $(PATH_PREFIX)/shared/private_key.pem
 
 
 all: clean run delay30s test
@@ -68,6 +67,7 @@ clean:
 	@echo "0, 0, 0" > $(PATH_PREFIX)/shared/coords
 	@echo "0" > $(PATH_PREFIX)/shared/init
 	@echo "0" > $(PATH_PREFIX)/shared/flight_status
+	
 logs:
 	docker-compose -f docker-compose-base.yml logs -f --tail 100
 	docker-compose -f docker-compose-obstacles.yml logs -f --tail 100
@@ -79,7 +79,7 @@ generate_keys:
 pipenv:
 	pipenv install -r requirements.txt
 
-prepare: permissions pipenv generate_keys
+prepare: generate_keys permissions pipenv 
 
 
 test:

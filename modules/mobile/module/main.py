@@ -12,6 +12,12 @@ flight_status = False
 
 @app.route('/turn_on')
 def turn_on():
+    """
+    Turns on the drone if it is not already turned on.
+    
+    Returns:
+        Response: JSON response indicating the status.
+    """
     global turn_on_flag
     if not turn_on_flag:
         payload = {"state": "on"}
@@ -23,6 +29,12 @@ def turn_on():
 
 @app.route('/init_status', methods=['POST'])
 def init_status():
+    """
+    Updates the initialization status of the drone.
+    
+    Returns:
+        Response: JSON response indicating the status.
+    """
     global ready_flag
     data = request.get_json()
     print (f'{data.get("status")}')
@@ -31,6 +43,12 @@ def init_status():
 
 @app.route('/start', methods=['GET'])
 def start():
+    """
+    Starts the drone if it is ready and not already started.
+    
+    Returns:
+        Response: JSON response indicating the status.
+    """
     global flight_status
     if ready_flag and not flight_status:    
         payload = {"state": "start"}
@@ -42,5 +60,7 @@ def start():
         return jsonify({"error": "drone turned off! or its repeated attempt to start drone"}) , 409
 
 def start_web():
+    """
+    Starts the Flask web server.
+    """
     app.run(host='0.0.0.0', port=8000, threaded=True)
-    

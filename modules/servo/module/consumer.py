@@ -20,18 +20,18 @@ MODULE_NAME = os.getenv("MODULE_NAME")
 import math
 
 def calculate_step_to_target(x, y, speed):
+    """
+    Calculates the next step towards the target, ensuring the drone stops at the target.
+    
+    Args:
+        x (float): Current x-coordinate.
+        y (float): Current y-coordinate.
+        speed (float): Maximum step length.
+    
+    Returns:
+        list: New coordinates [new_x, new_y] closer to the target.
+    """
     global current_target
-    """
-    Вычисляет следующий шаг, гарантируя остановку в целевой точке.
-    
-    Параметры:
-        x, y — текущие координаты,
-        target_x, target_y — координаты цели,
-        speed — максимальная длина шага.
-    
-    Возвращает:
-        Новые координаты [new_x, new_y], не дальше цели.
-    """
     dx = current_target[0] - x
     dy = current_target[1] - y
     
@@ -43,6 +43,9 @@ def calculate_step_to_target(x, y, speed):
     return [new_x, new_y]
 
 def report_move():
+    """
+    Reports the drone's movement by updating its coordinates.
+    """
     global current_azimuth
     while True:
         with open(FLIGHT_STATUS_PATH, 'r') as file:
@@ -67,10 +70,19 @@ def report_move():
             sleep(0.5)
 
 def pause_flight():
+    """
+    Pauses the drone's flight by setting its speed to zero.
+    """
     global current_speed
     current_speed = 0.0
 
 def move(details):
+    """
+    Updates the drone's azimuth, speed, and target coordinates based on the provided details.
+    
+    Args:
+        details (dict): Movement details including azimuth, speed, and target coordinates.
+    """
     global current_azimuth, current_speed, current_target
     current_azimuth = details.get("azimuth")
     current_target = details.get("end")
@@ -79,7 +91,13 @@ def move(details):
     print(f"moving on course {current_azimuth} with speed {current_speed} to point {current_target}")
 
 def handle_event(id, details_str):
-    """ Обработчик входящих в модуль задач. """
+    """
+    Processes incoming events and executes operations such as moving or pausing the drone.
+    
+    Args:
+        id (str): Event ID.
+        details_str (str): JSON string containing event details.
+    """
     details = json.loads(details_str)
 
     source: str = details.get("source")
@@ -94,6 +112,13 @@ def handle_event(id, details_str):
     
 
 def consumer_job(args, config):
+    """
+    Listens for incoming Kafka messages and processes them.
+    
+    Args:
+        args: Command-line arguments.
+        config (dict): Kafka consumer configuration.
+    """
     consumer = Consumer(config)
     def reset_offset(verifier_consumer, partitions):
         if not args.reset:
@@ -128,6 +153,13 @@ def consumer_job(args, config):
         consumer.close()
 
 def start_consumer(args, config):
+    """
+    Starts the consumer job and movement reporting in separate threads.
+    
+    Args:
+        args: Command-line arguments.
+        config (dict): Kafka consumer configuration.
+    """
     print(f"{MODULE_NAME}_consumer started")
     threading.Thread(target=lambda: consumer_job(args, config)).start()
     threading.Thread(target=report_move).start()

@@ -34,12 +34,27 @@ backward_route = []
 current_index = 0
 
 def set_mission(details):
+    """
+    Sets the mission details including forward, spray, and backward routes.
+    
+    Args:
+        details (dict): Mission details containing routes.
+    """
     global forward_route_valid,spray_route_valid,backward_route_valid
     forward_route_valid = details.get("mission").get("forward_route")
     spray_route_valid = details.get("mission").get("spray")
     backward_route_valid = details.get("mission").get("backward_route")
 
 def check_route(details):
+    """
+    Validates the provided routes against the stored valid routes.
+    
+    Args:
+        details (dict): Mission details containing routes.
+    
+    Returns:
+        bool: True if the routes are valid, False otherwise.
+    """
     global forward_route_valid,spray_route_valid,backward_route_valid
     valid_flag = True
     forward_route = details.get("mission").get("forward_route")
@@ -57,7 +72,12 @@ def check_route(details):
     return valid_flag
 
 def set_routes(details):
-    """ Устанавливает маршруты для движения дрона. """
+    """
+    Sets the routes for the drone's movement and initiates the forward route.
+    
+    Args:
+        details (dict): Mission details containing routes.
+    """
     global forward_route, spray_route, backward_route, forward_flag , current_target
     if check_route(details):
         forward_route = details.get("mission").get("forward_route")
@@ -77,16 +97,57 @@ def set_routes(details):
         with open(FLIGHT_STATUS_PATH, 'w') as file:
             file.write("1")
     else:
+        proceed_to_deliver(uuid4().__str__(), {
+                    "deliver_to": "message-sending",
+                    "operation": "status",
+                    "status": "request new mission"
+                })
         print("Mission was replaced can't start flight!")
 
 def calculate_distance(x1, y1, x2, y2):
+    """
+    Calculates the distance between two points.
+    
+    Args:
+        x1 (float): x-coordinate of the first point.
+        y1 (float): y-coordinate of the first point.
+        x2 (float): x-coordinate of the second point.
+        y2 (float): y-coordinate of the second point.
+    
+    Returns:
+        float: Distance between the two points.
+    """
     return math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
 
 def float_equal_alt(x1: float, y1: float, x2: float, y2: float, epsilon: float = 5) -> bool:
+    """
+    Checks if two points are approximately equal within a given epsilon.
+    
+    Args:
+        x1 (float): x-coordinate of the first point.
+        y1 (float): y-coordinate of the first point.
+        x2 (float): x-coordinate of the second point.
+        y2 (float): y-coordinate of the second point.
+        epsilon (float): Tolerance for equality.
+    
+    Returns:
+        bool: True if the points are approximately equal, False otherwise.
+    """
     return (abs(x1 - x2) <= epsilon and abs(y1 - y2) <= epsilon)
 
 def calculate_azimuth(x1, y1, x2, y2):
-
+    """
+    Calculates the azimuth angle between two points.
+    
+    Args:
+        x1 (float): x-coordinate of the first point.
+        y1 (float): y-coordinate of the first point.
+        x2 (float): x-coordinate of the second point.
+        y2 (float): y-coordinate of the second point.
+    
+    Returns:
+        float: Azimuth angle in degrees.
+    """
     dx = x2 - x1
     dy = y2 - y1
 
@@ -97,6 +158,9 @@ def calculate_azimuth(x1, y1, x2, y2):
     return azimuth
 
 def control_servos():
+    """
+    Monitors the drone's movement and adjusts its azimuth and speed if deviation is detected.
+    """
     global current_coords , current_target , deviation , speed
     while True:
         if current_coords and current_target:
@@ -116,6 +180,9 @@ def control_servos():
                 })
 
 def start_forward():
+    """
+    Starts the forward route of the drone's mission.
+    """
     global forward_route, spray_route, backward_route, current_index, forward_flag , current_target
     while True:
         with open(FLIGHT_STATUS_PATH, 'r') as file:
@@ -148,6 +215,9 @@ def start_forward():
             current_index += 1
 
 def pause_flight():
+    """
+    Pauses the drone's flight by setting its speed to zero.
+    """
     global current_index
     current_index = 0
     proceed_to_deliver(uuid4().__str__(), {
@@ -157,6 +227,9 @@ def pause_flight():
             })
 
 def start_backward():
+    """
+    Starts the backward route of the drone's mission.
+    """
     global backward_route, current_index , spray_flag, current_target
     while True:
         if backward_route and backward_flag and float_equal_alt(current_coords[0] , current_coords[1] , backward_route[-1].get("end")[0], backward_route[-1].get("end")[1]):
@@ -185,6 +258,9 @@ def start_backward():
                 current_index += 1
 
 def start_spraying():
+    """
+    Starts the spraying operation of the drone's mission.
+    """
     global spray_route, current_index , spray_flag , backward_flag, current_target
     while True:
         if spray_route and spray_flag and not forward_flag and float_equal_alt(current_coords[0] , current_coords[1] , spray_route[-1].get("end")[0], spray_route[-1].get("end")[1]):
@@ -226,7 +302,13 @@ def start_spraying():
                 current_index += 1
 
 def handle_event(id, details_str):
-    """ Обработчик входящих в модуль задач. """
+    """
+    Processes incoming events and executes operations such as setting routes or pausing the flight.
+    
+    Args:
+        id (str): Event ID.
+        details_str (str): JSON string containing event details.
+    """
     global current_height , current_coords , spray_flag , current_index , current_target
     details = json.loads(details_str)
     source: str = details.get("source")
@@ -265,6 +347,13 @@ def handle_event(id, details_str):
     
 
 def consumer_job(args, config):
+    """
+    Listens for incoming Kafka messages and processes them.
+    
+    Args:
+        args: Command-line arguments.
+        config (dict): Kafka consumer configuration.
+    """
     consumer = Consumer(config)
 
     def reset_offset(verifier_consumer, partitions):
@@ -300,6 +389,13 @@ def consumer_job(args, config):
         consumer.close()
 
 def start_consumer(args, config):
+    """
+    Starts the consumer job and related threads.
+    
+    Args:
+        args: Command-line arguments.
+        config (dict): Kafka consumer configuration.
+    """
     print(f"{MODULE_NAME}_consumer started")
     threading.Thread(target=lambda: consumer_job(args, config)).start()
     threading.Thread(target=start_forward).start()

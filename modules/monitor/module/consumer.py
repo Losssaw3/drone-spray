@@ -12,6 +12,13 @@ MODULE_NAME = os.getenv('MODULE_NAME')
 
 
 def handle_event(id, details_str):
+    """
+    Processes incoming events and checks policies before delivering.
+    
+    Args:
+        id (str): Event ID.
+        details_str (str): JSON string containing event details.
+    """
     details = json.loads(details_str)
 
     print(f"[info] handling event {id}, " \
@@ -31,6 +38,13 @@ def handle_event(id, details_str):
 
 
 def consumer_job(args, config):
+    """
+    Listens for incoming Kafka messages and processes them.
+    
+    Args:
+        args: Command-line arguments.
+        config (dict): Kafka consumer configuration.
+    """
     consumer = Consumer(config)
 
     def reset_offset(verifier_consumer, partitions):
@@ -68,5 +82,12 @@ def consumer_job(args, config):
 
 
 def start_consumer(args, config):
+    """
+    Starts the consumer job in a separate thread.
+    
+    Args:
+        args: Command-line arguments.
+        config (dict): Kafka consumer configuration.
+    """
     print(f'{MODULE_NAME}_consumer started')
     threading.Thread(target=lambda: consumer_job(args, config)).start()

@@ -13,6 +13,12 @@ from .producer import proceed_to_deliver
 MODULE_NAME = os.getenv("MODULE_NAME")
 
 def send_status(status):
+    """
+    Sends the drone's status to the encryption module.
+    
+    Args:
+        status (dict): Status details including coordinates, height, and battery level.
+    """
     proceed_to_deliver(uuid4().__str__(), {
             "deliver_to": "encryption",
             "operation": "status",
@@ -20,6 +26,12 @@ def send_status(status):
         })
 
 def send_photo(details):
+    """
+    Sends a photo to the encryption module.
+    
+    Args:
+        details (dict): Photo details.
+    """
     details["deliver_to"] = "encryption"
     proceed_to_deliver(uuid4().__str__(), details=details)
 
@@ -47,6 +59,13 @@ def handle_event(id, details_str):
     
 
 def consumer_job(args, config):
+    """
+    Listens for incoming Kafka messages and processes them.
+    
+    Args:
+        args: Command-line arguments.
+        config (dict): Kafka consumer configuration.
+    """
     consumer = Consumer(config)
 
     def reset_offset(verifier_consumer, partitions):
@@ -82,5 +101,12 @@ def consumer_job(args, config):
         consumer.close()
 
 def start_consumer(args, config):
+    """
+    Starts the consumer job in a separate thread.
+    
+    Args:
+        args: Command-line arguments.
+        config (dict): Kafka consumer configuration.
+    """
     print(f"{MODULE_NAME}_consumer started")
     threading.Thread(target=lambda: consumer_job(args, config)).start()

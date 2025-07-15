@@ -17,6 +17,13 @@ spray_route = []
 backward_route = []
 
 def set_mission(mission):
+    """
+    Sets the mission details including forward, spray, and backward routes.
+    Sends the mission details to the movement-calculation module.
+    
+    Args:
+        mission (dict): Mission details containing routes.
+    """
     global forward_route,spray_route,backward_route
     forward_route = mission.get("forward_route")
     spray_route = mission.get("spray")
@@ -28,7 +35,13 @@ def set_mission(mission):
         })
 
 def handle_event(id, details_str):
-    """ Обработчик входящих в модуль задач. """
+    """
+    Handles incoming events and processes operations like setting missions.
+    
+    Args:
+        id (str): Event ID.
+        details_str (str): JSON string containing event details.
+    """
     details = json.loads(details_str)
 
     source: str = details.get("source")
@@ -44,6 +57,13 @@ def handle_event(id, details_str):
     
 
 def consumer_job(args, config):
+    """
+    Starts the consumer job to listen for incoming Kafka messages.
+    
+    Args:
+        args: Command-line arguments.
+        config (dict): Kafka consumer configuration.
+    """
     consumer = Consumer(config)
 
     def reset_offset(verifier_consumer, partitions):
@@ -79,5 +99,12 @@ def consumer_job(args, config):
         consumer.close()
 
 def start_consumer(args, config):
+    """
+    Initializes the consumer job in a separate thread.
+    
+    Args:
+        args: Command-line arguments.
+        config (dict): Kafka consumer configuration.
+    """
     print(f"{MODULE_NAME}_consumer started")
     threading.Thread(target=lambda: consumer_job(args, config)).start()

@@ -22,6 +22,12 @@ INIT_PATH: str = "/shared/init"
 
 
 def send_status(details):
+    """
+    Sends the drone's status to the app and center modules.
+    
+    Args:
+        details (dict): Status details.
+    """
     try:
         responce_app = requests.post(APP_STATUS_URL, json=details)
         
@@ -30,13 +36,25 @@ def send_status(details):
         return {"status": "error", "message": str(e)}
 
 def send_photo(details):
+    """
+    Sends a photo to the center module for validation.
+    
+    Args:
+        details (dict): Photo details.
+    """
     try:
         responce_center = requests.post(CENTER_VALIDATE_PHOTO , json=details)
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
 def handle_event(id, details_str):
-    """ Модуль сбора данных. """
+    """
+    Handles incoming events and processes operations like sending status or photos.
+    
+    Args:
+        id (str): Event ID.
+        details_str (str): JSON string containing event details.
+    """
     details = json.loads(details_str)
     source: str = details.get("source")
     deliver_to: str = details.get("deliver_to")
@@ -51,6 +69,13 @@ def handle_event(id, details_str):
         send_status(details)
 
 def consumer_job(args, config):
+    """
+    Listens for incoming Kafka messages and processes them.
+    
+    Args:
+        args: Command-line arguments.
+        config (dict): Kafka consumer configuration.
+    """
     consumer = Consumer(config)
 
     def reset_offset(verifier_consumer, partitions):
@@ -86,5 +111,12 @@ def consumer_job(args, config):
         consumer.close()
 
 def start_consumer(args, config):
+    """
+    Starts the consumer job in a separate thread.
+    
+    Args:
+        args: Command-line arguments.
+        config (dict): Kafka consumer configuration.
+    """
     print(f'{MODULE_NAME}_consumer started')
     threading.Thread(target=lambda: consumer_job(args, config)).start()

@@ -23,6 +23,15 @@ ready_flag = False
 
 
 def load_private_key(password: bytes = None):
+    """
+    Loads the private key from a PEM file.
+    
+    Args:
+        password (bytes, optional): Password for the private key.
+    
+    Returns:
+        Private key object.
+    """
     print("Loading private key...")
     with open(PRIVATE_KEY_PATH, "rb") as key_file:
         key_data = key_file.read()
@@ -35,6 +44,12 @@ def load_private_key(password: bytes = None):
 
 
 def load_public_key():
+    """
+    Loads the public key from a PEM file.
+    
+    Returns:
+        Public key object.
+    """
     """Загружает публичный ключ из PEM-файла"""
     with open(PUBLIC_KEY_PATH, "rb") as key_file:
         return load_pem_public_key(
@@ -43,11 +58,18 @@ def load_public_key():
         )
 
 def sign_json(data: dict, private_key) -> str:
-    """Подписывает JSON-данные и возвращает подпись в base64"""
-    # Конвертируем словарь в стабильный JSON-формат (с сортировкой ключей)
-    json_str = json.dumps(data, sort_keys=True, ensure_ascii=False)
+    """
+    Signs JSON data and returns the signature in base64.
     
-    # Подписываем текст (предварительно конвертировав в bytes)
+    Args:
+        data (dict): JSON data to sign.
+        private_key: Private key object.
+    
+    Returns:
+        str: Base64-encoded signature.
+    """
+    """Подписывает JSON-данные и возвращает подпись в base64"""
+    json_str = json.dumps(data, sort_keys=True, ensure_ascii=False)
     signature = private_key.sign(
         json_str.encode('utf-8'),
         padding.PSS(
@@ -57,11 +79,19 @@ def sign_json(data: dict, private_key) -> str:
         hashes.SHA256()
     )
     
-    # Возвращаем подпись в base64 для удобной передачи
     import base64
     return base64.b64encode(signature).decode('ascii')
 
 def verify(details):
+    """
+    Verifies the signature of a message.
+    
+    Args:
+        details (dict): Message details containing signature and check data.
+    
+    Returns:
+        bool: True if the signature is valid, False otherwise.
+    """
     """ Проверяет подпись сообщения. """
     if "signature" in details and "check" in details:
         import base64
@@ -82,7 +112,6 @@ def verify(details):
                 ),
                 hashes.SHA256()
             )
-            print("Signature is valid.")
             return True
         except Exception as e:
             print(f"Signature verification failed: {e}")
@@ -91,10 +120,19 @@ def verify(details):
 
 class Center:
     def __init__(self):
+        """
+        Initializes the Center class with default mission and position.
+        """
         self.mission = {}
         self.position = [0,0,0]
 
     def send_mission_to_drone(self):
+        """
+        Sends a mission to the drone if it is ready and not already on a mission.
+        
+        Returns:
+            Response: JSON response indicating the status.
+        """
         global work_flag
         global ready_flag
         global start_point
@@ -118,7 +156,19 @@ class Center:
             print("error! drone already on mission or not ready")
         
 
-    def generate_random_mission(self, num_points=4, x_range=(100, 200), y_range=(100, 200), dispersion = 15):
+    def generate_random_mission(self, num_points=4, x_range=(100, 200), y_range=(100, 200), dispersion=15):
+        """
+        Generates a random mission with forward, spray, and backward routes.
+        
+        Args:
+            num_points (int): Number of points in the route.
+            x_range (tuple): Range for x-coordinates.
+            y_range (tuple): Range for y-coordinates.
+            dispersion (int): Dispersion for spray points.
+        
+        Returns:
+            dict: Generated mission details.
+        """
         global start_point
         route = [start_point]
         mission = {}
@@ -141,12 +191,21 @@ class Center:
 
 @app.route('/init_status', methods=['POST'])
 def log_boat_data():
-    global start_point
-    global ready_flag
+    """
+    Logs the drone's initialization status and handles mission requests.
+    
+    Returns:
+        Response: JSON response indicating the status.
+    """
+    global start_point , ready_flag , work_flag
     data = request.get_json()
     if verify(data):
         if ready_flag:
             print(f'Drone data - {data.get("status")}')
+            if data.get("status") == "request new mission":
+                work_flag = False
+                new_mission = Center()
+                new_mission.send_mission_to_drone()
             return jsonify({"status": "logged"}), 200
         else:
             status = data.get("status")
@@ -156,6 +215,12 @@ def log_boat_data():
 
 @app.route('/validate' , methods=['POST'])
 def validate():
+    """
+    Validates a photo and sends it for approval.
+    
+    Returns:
+        Response: JSON response indicating the status.
+    """
     data = request.get_json()
     photo = data.get("photo")
     print(f"validating {photo} ... ")
@@ -177,9 +242,17 @@ center = Center()
 
 @app.route('/start', methods=['GET'])
 def start():    
+    """
+    Starts the mission by sending it to the drone.
+    
+    Returns:
+        Response: JSON response indicating the status.
+    """
     return center.send_mission_to_drone()
 
 def start_web():
+    """
+    Starts the Flask web server.
+    """
     app.run(host='0.0.0.0', port=8000, threaded=True, debug=True)
 
-    

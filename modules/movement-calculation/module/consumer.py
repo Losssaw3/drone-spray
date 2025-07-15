@@ -19,6 +19,18 @@ spray_route = []
 backward_route = []
 
 def calculate_azimuth(x1, y1, x2, y2):
+    """
+    Calculates the azimuth angle between two points.
+    
+    Args:
+        x1 (float): x-coordinate of the first point.
+        y1 (float): y-coordinate of the first point.
+        x2 (float): x-coordinate of the second point.
+        y2 (float): y-coordinate of the second point.
+    
+    Returns:
+        float: Azimuth angle in degrees.
+    """
 
     dx = x2 - x1
     dy = y2 - y1
@@ -30,7 +42,15 @@ def calculate_azimuth(x1, y1, x2, y2):
     return azimuth
 
 def calculate_route(route):
-    """ Рассчитывает маршрут для движения дрона. """
+    """
+    Calculates the route for the drone's movement.
+    
+    Args:
+        route (list): List of coordinates representing the route.
+    
+    Returns:
+        list: Calculated route with azimuth, time, and speed details.
+    """
     if not route:
         return []
 
@@ -52,6 +72,9 @@ def calculate_route(route):
     return calculated_route
 
 def start_calculation():
+    """
+    Starts the calculation of forward, spray, and backward routes.
+    """
     global forward_route, spray_route, backward_route
     forward_route = calculate_route(forward_route)
     spray_route = calculate_route(spray_route)
@@ -70,6 +93,12 @@ def start_calculation():
           f"backward route: {backward_route}")
 
 def set_mission(details):
+    """
+    Sets the mission details and initiates route calculation.
+    
+    Args:
+        details (dict): Mission details containing routes.
+    """
     global forward_route,spray_route,backward_route
     forward_route = details.get("mission").get("forward_route")
     spray_route = details.get("mission").get("spray")
@@ -78,7 +107,13 @@ def set_mission(details):
 
 
 def handle_event(id, details_str):
-    """ Обработчик входящих в модуль задач. """
+    """
+    Processes incoming events and executes operations such as setting missions.
+    
+    Args:
+        id (str): Event ID.
+        details_str (str): JSON string containing event details.
+    """
     details = json.loads(details_str)
 
     source: str = details.get("source")
@@ -93,6 +128,13 @@ def handle_event(id, details_str):
     
 
 def consumer_job(args, config):
+    """
+    Listens for incoming Kafka messages and processes them.
+    
+    Args:
+        args: Command-line arguments.
+        config (dict): Kafka consumer configuration.
+    """
     consumer = Consumer(config)
 
     def reset_offset(verifier_consumer, partitions):
@@ -128,5 +170,12 @@ def consumer_job(args, config):
         consumer.close()
 
 def start_consumer(args, config):
+    """
+    Starts the consumer job in a separate thread.
+    
+    Args:
+        args: Command-line arguments.
+        config (dict): Kafka consumer configuration.
+    """
     print(f"{MODULE_NAME}_consumer started")
     threading.Thread(target=lambda: consumer_job(args, config)).start()

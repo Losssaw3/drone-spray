@@ -18,9 +18,25 @@ permission = False
 MODULE_NAME = os.getenv("MODULE_NAME")
 
 def float_equal_alt(x1: float, y1: float, x2: float, y2: float, epsilon: float = 5) -> bool:
+    """
+    Checks if two points are approximately equal within a given epsilon.
+    
+    Args:
+        x1 (float): x-coordinate of the first point.
+        y1 (float): y-coordinate of the first point.
+        x2 (float): x-coordinate of the second point.
+        y2 (float): y-coordinate of the second point.
+        epsilon (float): Tolerance for equality.
+    
+    Returns:
+        bool: True if the points are approximately equal, False otherwise.
+    """
     return (abs(x1 - x2) <= epsilon and abs(y1 - y2) <= epsilon)
 
 def check():
+    """
+    Checks the current point against spray and end points to determine actions.
+    """
     global work_flag , current_point , spray_point , spray_status
     if float_equal_alt(current_point[0] , current_point[1] , spray_point[0], spray_point[1]) and not work_flag:  
         work_flag = True
@@ -43,6 +59,9 @@ def check():
         })
 
 def start_spraying():
+    """
+    Starts the spraying operation.
+    """
     global work_flag , current_point , spray_point , spray_status
     spray_status = True
     proceed_to_deliver(uuid4().__str__(), {
@@ -58,6 +77,13 @@ def start_spraying():
 
 
 def handle_event(id, details_str):
+    """
+    Processes incoming events and executes operations such as setting missions or spraying.
+    
+    Args:
+        id (str): Event ID.
+        details_str (str): JSON string containing event details.
+    """
     global spray_point, permission , current_point , end_point
     """ Обработчик входящих в модуль задач. """
     details = json.loads(details_str)
@@ -92,6 +118,13 @@ def handle_event(id, details_str):
     
 
 def consumer_job(args, config):
+    """
+    Listens for incoming Kafka messages and processes them.
+    
+    Args:
+        args: Command-line arguments.
+        config (dict): Kafka consumer configuration.
+    """
     consumer = Consumer(config)
 
     def reset_offset(verifier_consumer, partitions):
@@ -127,5 +160,12 @@ def consumer_job(args, config):
         consumer.close()
 
 def start_consumer(args, config):
+    """
+    Starts the consumer job and related threads.
+    
+    Args:
+        args: Command-line arguments.
+        config (dict): Kafka consumer configuration.
+    """
     print(f"{MODULE_NAME}_consumer started")
     threading.Thread(target=lambda: consumer_job(args, config)).start()
