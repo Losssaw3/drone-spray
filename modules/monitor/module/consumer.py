@@ -4,7 +4,7 @@ import threading
 
 from confluent_kafka import Consumer, OFFSET_BEGINNING
 
-from .polices import check_operation
+from .policies import check_operation
 from .producer import proceed_to_deliver
 
 

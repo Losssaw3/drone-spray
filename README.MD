@@ -70,6 +70,11 @@ There are 2 tests files ,
 suspicious scenarios execution (Replacing mission , multiple attempts to start drone and more)
 - Second security policies test, which checking monitor's security policies
 
+### Video example
+
+- You can find a simple video example that can help you get started with the project at this link:
+https://rutube.ru/video/private/9a719a0e9b0838f5c41926a7aabda0b8/?p=NhJNPZDa3EPHwZfzcDGpNw
+
 #### Troubleshooting
 
 - if kafka or zookeeper containers don't start, make sure you don't have containers with the same name. If you do, remove the old containers and run the demo again.
